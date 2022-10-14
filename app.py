@@ -76,13 +76,92 @@ class MovieView(Resource):
 
         return MovieSchema(many=True).dump(query.all()), 200
 
+    def post(self):
+        data = request.json
+        try:
+            db.session.add(Movie(**data))
+            db.session.commit()
+            return "Успешно", 201
+        except Exception as e:
+            print(e)
+            db.session.rollback()
+            return "Неуспешно", 500
+
 @movie_ns.route('/<int:id>')
 class MovieView(Resource):
     def get(self, id):
-        query = Movie.query
-        if id:
-            query = query.filter(Movie.id == id)
-        return MovieSchema().dump(Movie.query.get(id)), 200
+        result = Movie.query(Movie).filter(Movie.id == id).all()
+        if len(result):
+            return MovieSchema().dump(result), 200
+        else:
+            return json.dumps({}), 200
+
+    def put(self, id):
+        data = request.json
+        try:
+            result = Movie.query.filter(Movie.id == id).one()
+            result.title = data.get('title')
+            db.session.add(result)
+            db.session.commit()
+            return "Обновилось", 200
+        except Exception:
+            db.session.rollback()
+            return "Не  обновилось", 500
+
+    def delete(self, id):
+        try:
+            result = Movie.query.filter(Movie.id == id).one()
+            db.session.delete(result)
+            db.session.commit()
+            return "Удалилось", 200
+        except Exception:
+            db.session.rollback()
+            return "Не удалилось", 500
+
+@director_ns.route("/")
+class DirectorView(Resource):
+    def get(self):
+        return DirectorSchema(many=True).dumps(Director.query.all())
+
+    def post(self):
+        data = request.json
+        try:
+            db.session.add(Director(**data))
+            db.session.commit()
+        except Exception as e:
+            print(e)
+            db.session.rollback()
+
+@director_ns.route("/<int:id>")
+class DirectorView(Resource):
+    def get(self, id):
+        result = Director.query(Director).filter(Director.id == id).all()
+        if len(result):
+            return DirectorSchema().dump(result), 200
+        else:
+            return json.dumps({}), 200
+@genre_ns.route("/")
+class GenreView(Resource):
+    def get(self):
+        return GenreSchema(many=True).dumps(Genre.query.all())
+
+    def post(self):
+        data = request.json
+        try:
+            db.session.add(Genre(**data))
+            db.session.commit()
+        except Exception as e:
+            print(e)
+            db.session.rollback()
+
+@genre_ns.route("/<int:id>")
+class GenreView(Resource):
+    def get(self, id):
+        result = Genre.query(Genre).filter(Genre.id == id).all()
+        if len(result):
+            return GenreSchema().dump(result), 200
+        else:
+            return json.dumps({}), 200
 
 
 
